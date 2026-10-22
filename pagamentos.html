@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página de Pagamentos - Relatório Financeiro de Afiliados</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        tech: {
+                            orange: '#FF5722',
+                            darkOrange: '#E65100',
+                            lightOrange: '#FF9800',
+                            bg: '#F8FAFC',
+                            card: '#FFFFFF',
+                            border: '#E2E8F0'
+                        }
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        .gradient-orange { background: linear-gradient(135deg, #FF5722 0%, #FF9800 100%); }
+        .shadow-orange-glow { box-shadow: 0 10px 25px -5px rgba(255, 87, 34, 0.3); }
+        .glass-header { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans antialiased min-h-screen flex flex-col justify-between text-sm">
+
+    <!-- CABEÇALHO -->
+    <header class="fixed top-0 left-0 w-full z-40 glass-header border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-2xl gradient-orange flex items-center justify-center text-white shadow-orange-glow">
+                    <i class="fa-solid fa-wallet text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-lg tracking-wide text-slate-900">TECH PAYMENTS</h1>
+                    <p class="text-[11px] text-slate-500 font-semibold tracking-wider uppercase -mt-1">Portal de Comissões a Pagar</p>
+                </div>
+            </div>
+            <a href="index.html" class="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200 transition">
+                <i class="fa-solid fa-arrow-left mr-1.5 text-orange-600"></i> Voltar à Loja
+            </a>
+        </div>
+    </header>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main class="max-w-6xl mx-auto px-4 pt-28 pb-16 w-full flex-1 space-y-6">
+        
+        <!-- HERO DO PAINEL DE PAGAMENTOS -->
+        <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+                <span class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase tracking-widest border border-emerald-200 inline-block mb-2">
+                    Painel Gerencial Restrito
+                </span>
+                <h2 class="text-2xl sm:text-3xl font-black text-slate-900">Relatório de Pagamentos Pix</h2>
+                <p class="text-xs text-slate-500 mt-1">Consulte os saldos calculados automaticamente (Vendas Diretas + Comissões de Rede).</p>
+            </div>
+            <div class="bg-emerald-50 px-5 py-3.5 rounded-2xl border border-emerald-200 text-right">
+                <span class="text-[10px] text-emerald-700 block uppercase font-bold">Total Geral a Distribuir</span>
+                <span id="lblTotalGeralPagar" class="text-xl font-black text-emerald-800">R$ 0,00</span>
+            </div>
+        </div>
+
+        <!-- LISTA DETALHADA DE AFILIADOS E EXTRATO -->
+        <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-4">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                <h3 class="text-base font-black text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-users-rectangle text-emerald-600"></i>
+                    <span>Extrato de Comissões por Afiliado</span>
+                </h3>
+                <span id="qtdAfiliadosRelatorio" class="bg-slate-100 text-slate-700 font-bold text-xs px-3 py-1 rounded-lg">0 Afiliados Cadastrados</span>
+            </div>
+
+            <div id="relatorioPagamentosContainer" class="space-y-4">
+                <!-- Injetado via JS -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- RODAPÉ -->
+    <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500">
+        <p>&copy; 2026 Tech - Software de Gestão. Todos os direitos reservados.</p>
+    </footer>
+
+    <!-- JAVASCRIPT DE PROCESSAMENTO FINANCEIRO -->
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            carregarRelatorioPagamentos();
+        });
+
+        function carregarRelatorioPagamentos() {
+            const container = document.getElementById('relatorioPagamentosContainer');
+            const lblTotalGeral = document.getElementById('lblTotalGeralPagar');
+            const badgeQtd = document.getElementById('qtdAfiliadosRelatorio');
+
+            // Recupera a base de afiliados do localStorage
+            let listaAfiliados = JSON.parse(localStorage.getItem('tech_afiliados')) || [];
+            badgeQtd.innerText = `${listaAfiliados.length} Afiliado(s) Cadastrado(s)`;
+
+            if (listaAfiliados.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                        <i class="fa-solid fa-wallet text-slate-300 text-4xl mb-3"></i>
+                        <p class="text-xs font-semibold text-slate-500">Nenhum afiliado registrado no banco de dados.</p>
+                        <p class="text-[11px] text-slate-400 mt-1">Assim que novos parceiros se cadastrarem na loja, eles aparecerão aqui com os valores de Pix calculados.</p>
+                    </div>
+                `;
+                lblTotalGeral.innerText = "R$ 0,00";
+                return;
+            }
+
+            container.innerHTML = '';
+            let somaTotalGeral = 0;
+
+            listaAfiliados.forEach(af => {
+                // Identifica o Patrocinador (Pai) se houver
+                let paiInfo = "Nenhum (Indicação Direta da Loja)";
+                if (af.patrocinadorId) {
+                    let pai = listaAfiliados.find(p => p.id === af.patrocinadorId);
+                    if (pai) paiInfo = `Patrocinador (Pai): ${pai.nome} (@${pai.usuario})`;
+                }
+
+                // Busca quem são os filhos (sub-afiliados) deste afiliado na rede
+                const meusFilhos = listaAfiliados.filter(f => f.patrocinadorId === af.id);
+
+                const comissaoDireta = af.comissaoDiretaTotal || 0;
+                const comissaoRede = af.comissaoIndiretaTotal || 0;
+                const totalAfiliado = comissaoDireta + comissaoRede;
+                somaTotalGeral += totalAfiliado;
+
+                // Monta o HTML do card financeiro de cada afiliado
+                container.innerHTML += `
+                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-200 pb-3">
+                            <div>
+                                <span class="bg-emerald-100 text-emerald-800 font-black text-[10px] px-2.5 py-0.5 rounded-full uppercase">${paiInfo}</span>
+                                <h4 class="text-base font-black text-slate-900 mt-1">${af.nome} <span class="text-xs text-slate-400 font-normal">(@${af.usuario})</span></h4>
+                                <p class="text-xs text-slate-500 font-mono">ID: ${af.id} | CPF: ${af.cpf || 'Não informado'}</p>
+                            </div>
+                            <div class="bg-emerald-600 text-white px-4 py-2.5 rounded-xl shadow-sm text-right w-full sm:w-auto">
+                                <span class="text-[10px] uppercase block font-bold text-emerald-100">Total Pix a Pagar</span>
+                                <span class="text-base font-black">R$ ${totalAfiliado.toFixed(2)}</span>
+                            </div>
+                        </div>
+
+                        <!-- Chave Pix e Detalhes de Vendas -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                            <div class="bg-white p-3 rounded-xl border border-slate-200 flex flex-col justify-between">
+                                <div>
+                                    <span class="text-slate-400 block text-[10px] uppercase font-bold">Chave Pix (CPF)</span>
+                                    <strong class="text-slate-900 font-mono text-sm">${af.pix || af.cpf || 'Não informada'}</strong>
+                                </div>
+                                <button onclick="copiarChavePix('${af.pix || af.cpf || ''}')" class="mt-2 py-1.5 px-3 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-[11px] font-bold transition text-center">
+                                    <i class="fa-solid fa-copy mr-1"></i> Copiar Chave Pix
+                                </button>
+                            </div>
+
+                            <div class="bg-white p-3 rounded-xl border border-slate-200 space-y-1">
+                                <span class="text-slate-400 block text-[10px] uppercase font-bold">Vendas Diretas (Comissão 40%)</span>
+                                <div class="text-slate-800 font-semibold">${af.vendasDiretas || 0} venda(s) realizada(s)</div>
+                                <div class="text-orange-600 font-black text-sm">R$ ${comissaoDireta.toFixed(2)}</div>
+                            </div>
+
+                            <div class="bg-white p-3 rounded-xl border border-slate-200 space-y-1">
+                                <span class="text-slate-400 block text-[10px] uppercase font-bold">Comissão de Rede (10% dos Filhos)</span>
+                                <div class="text-emerald-700 font-semibold">${meusFilhos.length} filho(s) na equipe</div>
+                                <div class="text-emerald-600 font-black text-sm">R$ ${comissaoRede.toFixed(2)}</div>
+                            </div>
+                        </div>
+
+                        <!-- Detalhamento dos Filhos Indicados (Expansível) -->
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 text-xs space-y-2">
+                            <span class="text-slate-500 font-bold uppercase tracking-wider text-[10px] flex items-center gap-1">
+                                <i class="fa-solid fa-sitemap text-emerald-600"></i> Sub-afiliados vinculados a este patrocinador:
+                            </span>
+                            <div class="flex flex-wrap gap-2">
+                                ${meusFilhos.length > 0 ? meusFilhos.map(f => `<span class="bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg text-slate-700 font-medium">${f.nome} (@${f.usuario}) — ${f.vendasDiretas || 0} venda(s)</span>`).join('') : '<span class="text-slate-400 italic">Nenhum sub-afiliado cadastrado na rede deste parceiro.</span>'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            lblTotalGeral.innerText = `R$ ${somaTotalGeral.toFixed(2)}`;
+        }
+
+        function copiarChavePix(chave) {
+            if (!chave) {
+                alert("Nenhuma chave Pix cadastrada para este usuário.");
+                return;
+            }
+            navigator.clipboard.writeText(chave);
+            alert(`Chave Pix (${chave}) copiada com sucesso para o seu Pix!`);
+        }
+    </script>
+</body>
+</html>
